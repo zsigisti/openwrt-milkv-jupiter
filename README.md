@@ -5,7 +5,7 @@ A buildable [OpenWrt](https://openwrt.org/) port for the **[Milk-V Jupiter](http
 This repository is a fork of [`chainsx/openwrt-spacemit`](https://github.com/chainsx/openwrt-spacemit) (itself a fork of upstream OpenWrt 24.10) with a Milk-V Jupiter image target added and a reproducible, containerised build that works on modern host systems.
 
 > ### 🤖 Built with AI
-> This port — the device profile, the build fixes, the container setup, and this README — was created by **Anthropic's Claude (Claude Code)** working from the upstream sources. It is shared as-is in the hope it's useful. Treat it as a community/AI contribution: review before relying on it, and see the [boot caveat](#-boot-caveat-read-before-flashing) below.
+> This port — the device profile, the build fixes, the container setup, and this README — was created by **Anthropic's Claude (Claude Code)** working from the upstream sources. It is shared as-is in the hope it's useful. Treat it as a community/AI contribution: review before relying on it, and see the [boot caveat](https://github.com/zsigisti/openwrt-milkv-jupiter#%EF%B8%8F-boot-caveat-read-before-flashing) below.
 
 ---
 

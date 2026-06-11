@@ -73,6 +73,67 @@ correct `k1-x_milkv-jupiter.dtb` is already built and installed by this image.
 
 ---
 
+## Project status & roadmap
+
+**This firmware is not 100% working yet.** It builds cleanly and produces flashable
+images, but it has **not** been verified to boot all the way to a usable system on
+real Jupiter hardware (see the [boot caveat](#-boot-caveat-read-before-flashing)).
+Treat every release as experimental until the status below says otherwise.
+
+| Area | Status |
+|------|--------|
+| Build from source (container) | ✅ Works |
+| SD-card image generation | ✅ Works |
+| First boot on real hardware | ⚠️ Unverified — generic shared boot blobs |
+| Ethernet / LAN | ⚠️ Unverified |
+| Wi-Fi (RTL8852BS) | ⚠️ Unverified |
+| **NVMe / PCIe storage** | ⛔ Not yet — **planned** (see roadmap) |
+| eMMC boot | ⛔ Not tested |
+
+### Roadmap
+
+- [ ] Confirm first boot on real Milk-V Jupiter hardware
+- [ ] Verify Ethernet, Wi-Fi and USB
+- [ ] **NVMe support** — enable PCIe + NVMe kernel modules and the Jupiter's M.2 slot
+      so the rootfs can live on / boot from an NVMe SSD
+- [ ] Jupiter-specific boot blobs (FSBL / u-boot) instead of the shared K1 ones
+- [ ] eMMC install path
+
+Found a bug or got it booting? Please open an issue or PR — reports from real
+hardware are the most useful thing right now.
+
+---
+
+## Releases, branches & snapshots
+
+This repo uses two long-lived branches and two kinds of release.
+
+| Branch | Purpose |
+|--------|---------|
+| **`main`** | Stable line. Only tested, tagged states land here. Default branch. |
+| **`dev`** | Development line. New work, experiments and roadmap items land here first. |
+
+**Stable releases** are cut from `main` as version tags (`vX.Y.Z`) and show up under
+[Releases](https://github.com/zsigisti/openwrt-milkv-jupiter/releases) with the built
+`.img.gz` images attached. The first one is `v0.1.0-alpha` and is marked
+*pre-release* because the firmware is not fully verified yet.
+
+**Snapshots** are the OpenWrt term for rolling, automatically-built images from the
+tip of development — the bleeding edge, rebuilt as `dev` changes, never a fixed
+version. Here they work like this:
+
+- A GitHub Actions workflow ([`.github/workflows/snapshot.yml`](.github/workflows/snapshot.yml))
+  builds the image whenever `dev` is pushed (or on manual dispatch).
+- The result is published to a single rolling pre-release tagged **`snapshot`**, whose
+  assets are overwritten on every successful build.
+- So <https://github.com/zsigisti/openwrt-milkv-jupiter/releases/tag/snapshot> always
+  points at the latest `dev` build.
+
+Rule of thumb: grab a **versioned release** for the most-tested image, or a
+**snapshot** if you want the newest changes and don't mind that it's untested.
+
+---
+
 ## What was changed vs. upstream
 
 - **`target/linux/spacemit/image/k1-sbc.mk`** — added a `Device/Milkv-Jupiter`

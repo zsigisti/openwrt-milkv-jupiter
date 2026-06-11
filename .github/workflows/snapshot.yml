@@ -1,0 +1,71 @@
+name: Snapshot build
+
+# Rolling "snapshot" builds from the tip of the dev branch.
+# Every successful run overwrites the assets on the single `snapshot` pre-release,
+# so the `snapshot` tag always points at the latest dev build.
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch: {}
+
+# Only one snapshot build at a time; newer pushes cancel older in-flight ones.
+concurrency:
+  group: snapshot
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h
+
+      - name: Checkout dev
+        uses: actions/checkout@v4
+
+      - name: Build Jupiter image (containerised)
+        run: ./scripts/build-jupiter.sh
+
+      - name: Collect images
+        id: collect
+        run: |
+          mkdir -p out
+          cp bin/targets/spacemit/openwrt-spacemit-k1-sbc-Milkv-Jupiter-*-sdcard.img.gz out/ || true
+          cp bin/targets/spacemit/*.manifest out/ || true
+          cp bin/targets/spacemit/*.buildinfo out/ || true
+          ls -la out
+          echo "stamp=$(date -u +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish rolling snapshot release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: snapshot
+          name: "Snapshot (dev)"
+          prerelease: true
+          target_commitish: dev
+          # Replace the assets on every build so `snapshot` is always the latest dev image.
+          files: out/*
+          body: |
+            ⚠️ **Rolling snapshot — bleeding edge, untested.**
+
+            Automatically built from the tip of `dev`. Overwritten on every push to
+            `dev`, so this is *not* a fixed version. For the most-tested image use a
+            [versioned release](https://github.com/zsigisti/openwrt-milkv-jupiter/releases)
+            instead.
+
+            - Source: `dev` @ `${{ steps.collect.outputs.sha }}`
+            - Built: `${{ steps.collect.outputs.stamp }} UTC`
+
+            This firmware is **not 100% working** — see the README boot caveat and
+            project status before flashing.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

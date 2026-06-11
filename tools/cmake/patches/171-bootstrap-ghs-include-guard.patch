@@ -1,0 +1,20 @@
+During the CMake bootstrap stage the GHS generator sources are not
+compiled, and the only GHS use in cmake.cxx is already guarded by
+!defined(CMAKE_BOOTSTRAP). However the header is included unconditionally
+on Linux/Windows hosts, and its inline cmGlobalGhsMultiGenerator::NewFactory()
+constructs cmGlobalGeneratorSimpleFactory<cmGlobalGhsMultiGenerator>. Host
+GCC 16 emits that factory's vtable into cmake.o just from the include,
+pulling in undefined references to the GHS constructor and GetDocumentation()
+and breaking the bootstrap link. Guard the include with !CMAKE_BOOTSTRAP so
+no GHS symbols are referenced during bootstrap.
+
+--- a/Source/cmake.cxx
++++ b/Source/cmake.cxx
+@@ -130,7 +130,7 @@
+
+ // NOTE: the __linux__ macro is predefined on Android host too, but
+ // main CMakeLists.txt filters out this generator by host name.
+-#if (defined(__linux__) && !defined(__ANDROID__)) || defined(_WIN32)
++#if !defined(CMAKE_BOOTSTRAP) && ((defined(__linux__) && !defined(__ANDROID__)) || defined(_WIN32))
+ #  include "cmGlobalGhsMultiGenerator.h"
+ #endif

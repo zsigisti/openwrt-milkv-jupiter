@@ -46,3 +46,12 @@ define Device/DEB2
   DEVICE_PACKAGES := kmod-rtl8852bs wpad
 endef
 TARGET_DEVICES += DEB2
+
+define Device/Milkv-Jupiter
+  DEVICE_VENDOR := Milk-V
+  DEVICE_MODEL := Jupiter
+  DEVICE_DTS := spacemit/k1-x_milkv-jupiter
+  SOC := KeyStone
+  DEVICE_PACKAGES := kmod-rtl8852bs wpad
+endef
+TARGET_DEVICES += Milkv-Jupiter

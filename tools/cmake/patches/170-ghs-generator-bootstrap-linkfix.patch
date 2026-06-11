@@ -1,0 +1,19 @@
+During the bootstrap-driven configure of the full CMake, the minimal
+stage-1 cmake does not populate CMAKE_SYSTEM_NAME, so the GHS generator
+sources are gated out. cmake.cxx however references them unconditionally
+whenever __linux__ (or _WIN32) is defined, producing undefined-reference
+link errors (seen with host GCC 16). Gate on "NOT APPLE" instead, which
+does not depend on CMAKE_SYSTEM_NAME being detected and matches the C++
+preprocessor condition (linux/windows = include, apple = exclude).
+
+--- a/Source/CMakeLists.txt
++++ b/Source/CMakeLists.txt
+@@ -951,7 +951,7 @@ endif()
+
+ # GHS support
+ # Works only for windows and linux
+-if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
++if(WIN32 OR NOT APPLE)
+   target_sources(
+     CMakeLib
+     PRIVATE

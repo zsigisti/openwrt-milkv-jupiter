@@ -59,6 +59,50 @@ LAN on **192.168.1.1**; connect and browse to <http://192.168.1.1> (LuCI) or
 
 ---
 
+## Using NVMe storage
+
+The Jupiter has an M.2 slot on the PCIe root complex. The kernel has the K1 PCIe
+controller (`CONFIG_PCI_K1X`), the combo-PHY and the NVMe block driver built in, and
+the image ships the userspace tools (`nvme-cli`, `fdisk`, `e2fsprogs`, `f2fs-tools`,
+`block-mount`). With an SSD in the slot it should appear as `/dev/nvme0n1`.
+
+> ⚠️ Built and wired up, but **not yet verified on real hardware** — see the status table.
+
+```sh
+# 1. Confirm the drive is detected
+nvme list
+ls -l /dev/nvme*
+
+# 2. Partition it (GUI: cfdisk /dev/nvme0n1)
+fdisk /dev/nvme0n1            # e.g. one big Linux partition -> /dev/nvme0n1p1
+
+# 3. Format (ext4, or f2fs which suits flash well)
+mkfs.ext4 /dev/nvme0n1p1
+# mkfs.f2fs /dev/nvme0n1p1
+
+# 4a. Mount somewhere for data
+mkdir -p /mnt/nvme
+mount /dev/nvme0n1p1 /mnt/nvme
+```
+
+### Move the overlay onto NVMe (extroot)
+
+To give the system real disk space instead of the tiny SD overlay, use OpenWrt
+[extroot](https://openwrt.org/docs/guide-user/additional-software/extroot_configuration):
+
+```sh
+# copy the current overlay to the NVMe partition, then point fstab at it
+mount /dev/nvme0n1p1 /mnt/nvme
+tar -C /overlay -cvf - . | tar -C /mnt/nvme -xf -
+block detect | uci import fstab
+uci set fstab.@mount[-1].target='/overlay'
+uci set fstab.@mount[-1].enabled='1'
+uci commit fstab
+reboot
+```
+
+---
+
 ## ⚠️ Boot caveat (read before flashing)
 
 The early boot blobs in this tree (`FSBL.bin`, `u-boot.itb`, OpenSBI `fw_dynamic.itb`,
@@ -87,17 +131,21 @@ Treat every release as experimental until the status below says otherwise.
 | First boot on real hardware | ⚠️ Unverified — generic shared boot blobs |
 | Ethernet / LAN | ⚠️ Unverified |
 | Wi-Fi (RTL8852BS) | ⚠️ Unverified |
-| **NVMe / PCIe storage** | ⛔ Not yet — **planned** (see roadmap) |
+| **NVMe / PCIe storage** | 🧪 Supported in image — driver + tooling built in, untested on hardware |
 | eMMC boot | ⛔ Not tested |
 
 ### Roadmap
 
 - [ ] Confirm first boot on real Milk-V Jupiter hardware
 - [ ] Verify Ethernet, Wi-Fi and USB
-- [ ] **NVMe support** — enable PCIe + NVMe kernel modules and the Jupiter's M.2 slot
-      so the rootfs can live on / boot from an NVMe SSD
+- [x] **NVMe support** — K1 PCIe root complex + combo-PHY + NVMe block driver are
+      built into the kernel, and the image ships `nvme-cli`, partitioning/format
+      tools and `block-mount` so an NVMe SSD in the M.2 slot can be used (incl.
+      extroot). See [Using NVMe storage](#using-nvme-storage). *(needs hardware
+      verification.)*
 - [ ] Jupiter-specific boot blobs (FSBL / u-boot) instead of the shared K1 ones
-- [ ] eMMC install path
+- [ ] eMMC boot / install path
+- [ ] Verify NVMe on real hardware and add a boot-from-NVMe path
 
 Found a bug or got it booting? Please open an issue or PR — reports from real
 hardware are the most useful thing right now.

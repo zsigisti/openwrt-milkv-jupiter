@@ -105,15 +105,20 @@ reboot
 
 ## ⚠️ Boot caveat (read before flashing)
 
-The early boot blobs in this tree (`FSBL.bin`, `u-boot.itb`, OpenSBI `fw_dynamic.itb`,
-under `target/linux/spacemit/image/`) are **prebuilt and shared across all K1 boards**
-— they are not regenerated per device. FSBL performs DDR training and PMIC bring-up,
-which *can* be board-specific.
+The early boot blobs live under `target/linux/spacemit/image/`. The **`FSBL.bin`** —
+which performs DDR training and PMIC bring-up, the most board-specific stage — is
+taken directly from **Milk-V's official Jupiter Bianbu release (v2.1.1, 2025-03-05)**,
+so first-stage bring-up uses the binary Milk-V validates on real Jupiter hardware.
 
-Because the Jupiter is a K1-x board there is a good chance these generic blobs work,
-but **first-boot on real hardware is not guaranteed**. If the board hangs at early
-boot, swap in Milk-V's own Jupiter bootloader and re-flash the boot sectors. The
-correct `k1-x_milkv-jupiter.dtb` is already built and installed by this image.
+The later stages (OpenSBI `fw_dynamic.itb`, `u-boot.itb`, `env.bin`) are the
+OpenWrt-tuned blobs from the upstream port: `env.bin` carries the OpenWrt **extlinux**
+boot flow (Milk-V's own env boots GRUB/EFI instead, so it can't be used as-is). The
+correct `k1-x_milkv-jupiter.dtb` is built and installed by this image.
+
+**First-boot on real hardware is still not guaranteed** — the Jupiter FSBL is now in
+place, but the full FSBL → OpenSBI → U-Boot → extlinux chain has not been verified
+end-to-end on a board. If it hangs at early boot, re-flash the boot sectors with
+Milk-V's complete official bootloader and report back.
 
 ---
 
@@ -128,7 +133,7 @@ Treat every release as experimental until the status below says otherwise.
 |------|--------|
 | Build from source (container) | ✅ Works |
 | SD-card image generation | ✅ Works |
-| First boot on real hardware | ⚠️ Unverified — generic shared boot blobs |
+| First boot on real hardware | ⚠️ Unverified — now uses Milk-V's official Jupiter FSBL (v2.1.1) |
 | Ethernet / LAN | ⚠️ Unverified |
 | Wi-Fi (RTL8852BS) | ⚠️ Unverified |
 | **NVMe / PCIe storage** | 🧪 Supported in image — driver + tooling built in, untested on hardware |
